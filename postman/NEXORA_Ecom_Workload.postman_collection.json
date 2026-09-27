@@ -1,0 +1,178 @@
+{
+  "info": {
+    "name": "NEXORA E-Com Workload API",
+    "description": "Complete API collection for the Synthetic E-Commerce Workload for NEXORA AIOps. Import this into Postman and set the {{base_url}} and {{token}} collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000", "type": "string" },
+    { "key": "token", "value": "", "type": "string", "description": "JWT — populated automatically by the Login request." }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/health" },
+            "description": "Returns application health status, MongoDB state, uptime, and memory."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/register" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"SecurePassword123\"\n}"
+            },
+            "description": "Register a new user. Returns the created user object (without password hash)."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  console.log('JWT token saved to collection variable.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/login" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"SecurePassword123\"\n}"
+            },
+            "description": "Login and receive a JWT (valid for 24 hours). The token is automatically saved to the {{token}} collection variable."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Product Catalog",
+      "item": [
+        {
+          "name": "GET /api/products (page 1)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/products?page=1&limit=10",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Retrieve paginated products. Requires JWT. Add 10-50ms read jitter."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/products (page 2)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/products?page=2&limit=10",
+              "query": [
+                { "key": "page", "value": "2" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Checkout",
+      "item": [
+        {
+          "name": "POST /api/checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/api/checkout" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"000000000000000000000001\",\n      \"sku\": \"ELEC-001\",\n      \"name\": \"4K Ultra HD Smart TV 55\\\"\",\n      \"quantity\": 1,\n      \"unitPrice\": 599.99\n    },\n    {\n      \"productId\": \"000000000000000000000002\",\n      \"sku\": \"ELEC-002\",\n      \"name\": \"Wireless Noise-Cancelling Headphones\",\n      \"quantity\": 2,\n      \"unitPrice\": 199.99\n    }\n  ]\n}"
+            },
+            "description": "Process a checkout. Payment is simulated locally (200-1500ms latency, 5% natural failure rate). On success returns paymentRef."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chaos Engineering",
+      "item": [
+        {
+          "name": "Trigger 1 — Payment Timeout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/chaos/payment-timeout" },
+            "description": "Forces the PaymentSimulator to hang for 30s on the next 50 checkout requests. Generates CRITICAL_LATENCY alert."
+          },
+          "response": []
+        },
+        {
+          "name": "Trigger 2 — Database Drop",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/chaos/db-drop" },
+            "description": "Forcefully closes the MongoDB connection pool for 60 seconds. Catalog requests will return 503. Auto-recovers."
+          },
+          "response": []
+        },
+        {
+          "name": "Trigger 3 — CPU Spike",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/chaos/cpu-spike" },
+            "description": "Blocks the Node.js event loop for ~10 seconds. HTTP requests will queue. Generates NODE_EVENT_LOOP_BLOCKED metric."
+          },
+          "response": []
+        },
+        {
+          "name": "Trigger 4 — Filesystem Fault",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/chaos/fs-fault" },
+            "description": "Renames the product cache file to cause ENOENT reads for 30 seconds. Auto-restores."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
