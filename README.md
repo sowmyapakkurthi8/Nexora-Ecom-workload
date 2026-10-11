@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.x-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Local-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![License](https://img.shields.io/badge/Scope-72--Hour%20SRS-blueviolet?style=for-the-badge)](./)
+
 
 <p align="center">
   A high-volume, realistic e-commerce application engineered to generate operational telemetry—including <b>metrics, logs, traces, and controlled failure cascades</b>—to train and evaluate external AIOps platforms (such as NEXORA) and their Root Cause Analysis (RCA) models.
